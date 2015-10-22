@@ -1,0 +1,40 @@
+Instructions for generating the prostate cancer TF-miRNA network shown in Fig. 2a.
+
+The following R libraries required by SIMBA should be installed first: mclust, extremevalues and matrixStats.
+
+Step 1: Download SIMBA from Github: https://github.com/SIMBA2/SIMBA
+Step 2: Install SIMBA: 
+On Mac:
+Rscript -e "install.packages('SIMBA_1.0_macosx.tgz', repos = NULL)"
+On Windows: 
+Rscript -e "install.packages('SIMBA.zip', repos = NULL)"
+On Linux:
+Rscript -e "install.packages('SIMBA_1.0_R_x86_64-pc-linux-gnu.tar.gz', repos = NULL)"
+Step 3: Open R and run the following code:
+
+# The entire process will run for approximately 20 minutes on a Core i7 desktop with Ubuntu 12.04. 
+# Once done, the network can be visualized with Cytoscape. The network should be the same as the one shown in Fig. 2a in the manuscript.
+
+library(SIMBA)
+data('mRNA_exp',package='SIMBA')
+data('miRNA_exp',package='SIMBA')
+data('miRNA_CNV',package='SIMBA')
+data('TFlist',package='SIMBA')
+
+#calculate outliers for mRNA and miRNA
+mRNA_outliers<-calc_bimodal_outliers(mRNA_exp)
+miRNA_outliers<-calc_bimodal_outliers(miRNA_exp)
+
+#filter miRNA outliers by CNV data
+miRNA_outliers2<-filter_outliers_by_CNV(miRNA_CNV,miRNA_outliers)
+
+#build an initial network for TF and miRNAs
+init.net<-build_initial_network(mRNA_exp,miRNA_exp,mRNA_outliers,miRNA_outliers2,TFlist)
+
+#build a network for TF and miRNAs with MDL
+FDRcutoff<-0.05
+net<-build_network(mRNA_exp,miRNA_exp,mRNA_outliers,miRNA_outliers2,TFlist,init.net,FDRcutoff)
+
+#filter the network by binomial test
+finalnet<-filter_network(net)
+# finalnet then can be visualized using Cytoscape, it is the network shown in Fig. 2a in the manuscript.
